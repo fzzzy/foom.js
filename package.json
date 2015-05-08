@@ -1,0 +1,19 @@
+{
+  "name": "foom.js",
+  "description": "A multiuser web thing",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fzzzy/foom.js.git"
+  },
+  "dependencies": {
+    "babel": "5.2.15",
+    "core-js": "0.9.7",
+    "engine.io": "1.5.1",
+    "gulp": "3.8.11",
+    "gulp-babel": "5.1.0",
+    "gulp-nodemon": "2.0.2",
+    "gulp-run": "1.6.8",
+    "node-static": "0.7.6",
+    "random-word": "1.0.1"
+  }
+}
