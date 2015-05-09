@@ -11,10 +11,12 @@ window.oncast = function (thing) {
   }
 }
 
-
-query("agent", function (agent) {
+async function main() {
+  let agent = await query("agent");
   console.log("got agent", agent);
   let a = address(agent.vat, agent.id);
   a({join: window.actor_id, vat: window.vat_id});
   a({msg: "Hello, World", id: window.actor_id, vat: window.vat_id});
-});
+}
+
+main();

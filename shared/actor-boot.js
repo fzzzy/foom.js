@@ -14,7 +14,7 @@
       } else if (m.data.response !== undefined) {
         let cb = callbacks.get(m.data.response);
         callbacks.delete(m.data.response);
-        cb({id: m.data.response_id, vat: m.data.response_vat});
+        cb.resolve({id: m.data.response_id, vat: m.data.response_vat});
       } else {
         if (window.oncast !== undefined) {
           window.oncast(m.data);
@@ -23,12 +23,15 @@
     }
   }());
 
-  window.query = function query(name, cb) {
-    callbacks.set("query." + name, cb);
+  window.query = function query(name) {
+    let p = new Promise(function (resolve, reject) {
+      callbacks.set("query." + name, {resolve: resolve, reject: reject});
+    });
     let msg = {query: name, actor_id: actor_id, vat_id: vat_id};
     window.parent.postMessage(
       msg,
       location.origin);
+    return p;
   }
 
   window.address = function address(vat, id) {

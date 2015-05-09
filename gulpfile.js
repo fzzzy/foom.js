@@ -26,7 +26,7 @@ gulp.task("transform", ["resources", "shared"], function () {
     "!dist/**/*", "!node_modules/**/*",
     "!**/shared/core.js", "!**/shared/engine.io.js",
     "!**/shared/es6-module-loader.js", "!gulpfile.js"])
-    .pipe(babel())
+    .pipe(babel({ stage: 1 }))
     .pipe(gulp.dest("dist"));
 });
 
