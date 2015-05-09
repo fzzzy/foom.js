@@ -1,4 +1,6 @@
 
+import { Vat } from "../shared/actors";
+
 console.log("hello from agent.js");
 
 let addr = 'ws://localhost:8080',

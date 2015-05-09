@@ -37,7 +37,7 @@ class Actor {
   }
 }
 
-class Vat {
+export class Vat {
   constructor(remote_addr, greet) {
     let vat_id = uuid4();
     this.id = vat_id;
