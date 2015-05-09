@@ -2,8 +2,7 @@
 (function () {
   let callbacks = new Map();
 
-  window.onmessage = (function () {
-    return function (m) {
+  window.onmessage = function (m) {
       if (m.data.spawn !== undefined) {
         window.actor_id = m.data.id;
         window.vat_id = m.data.vat;
@@ -13,14 +12,22 @@
       } else if (m.data.response !== undefined) {
         let cb = callbacks.get(m.data.response);
         callbacks.delete(m.data.response);
-        cb.resolve({id: m.data.response_id, vat: m.data.response_vat});
+        let response = {
+          id:m.data.response_id,
+          vat: m.data.response_vat
+        };
+        if (m.data.error !== undefined) {
+          response.error = m.data.error;
+          cb.reject(response);
+        } else {
+          cb.resolve(response);
+        }
       } else {
         if (window.oncast !== undefined) {
           window.oncast(m.data);
         }
       }
     }
-  }());
 
   window.query = function query(name) {
     let p = new Promise(function (resolve, reject) {
