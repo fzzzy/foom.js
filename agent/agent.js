@@ -11,5 +11,4 @@ window.oncast = function (thing) {
       a(thing);
     }
   }
-  console.log("joined", JSON.stringify(joined));
 }

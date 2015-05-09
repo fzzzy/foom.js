@@ -51,18 +51,13 @@ export class Vat {
           vat: vat_id}));
 
       socket.on('message', (msg) => {
-        console.log("actors.js onmessage", msg);
         msg = JSON.parse(msg);
         if (msg.cast !== undefined) {
-          console.log("cast", msg.vat, msg.id, msg.cast);
           let act = this.actors.get(msg.id);
-          console.log("actors.js onmessage cast got act", act, msg.id);
           act.cast(msg.cast);
         } else if (msg.response !== undefined) {
-          console.log("stuff", msg.response_vat, this.id, msg.response_id);
           if (msg.query_vat === this.id) {
             let act = this.actors.get(msg.query_id);
-            console.log("got act", act);
             act.cast(msg);
           }
         } else {
@@ -73,12 +68,11 @@ export class Vat {
       });
 
       socket.on("close", function (msg) {
-        console.log("close", msg);
+        console.log("The socket was closed.");
       });
     });
 
     window.onmessage = (m) => {
-      console.log("actors.js window.onmessage", JSON.stringify(m.data));
       if (m.data.query !== undefined) {
         socket.send(JSON.stringify(m.data));
       } else if (m.data.cast !== undefined) {

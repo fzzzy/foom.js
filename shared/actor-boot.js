@@ -1,3 +1,4 @@
+
 (function () {
   let callbacks = new Map();
 

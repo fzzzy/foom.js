@@ -33,25 +33,18 @@ gulp.task("transform", ["resources", "shared"], function () {
     .pipe(gulp.dest("dist"));
 });
 
-gulp.task("webpack-agent", ["transform"], function () {
-  return gulp.src('dist/agent/agent-boot.js')
+gulp.task("webpack", ["transform"], function () {
+  return gulp.src('dist/shared/index-boot.js')
       .pipe(webpack({
-        output: { filename: "agent-boot-bundle.js" }
-      })).pipe(gulp.dest('dist/agent'));
+        output: { filename: "index-boot-bundle.js" }
+      })).pipe(gulp.dest('dist/shared'));
 });
 
-gulp.task("webpack-client", ["transform"], function () {
-  return gulp.src('dist/client/client-boot.js')
-      .pipe(webpack({
-        output: { filename: "client-boot-bundle.js" }
-      })).pipe(gulp.dest('dist/client'));
-});
-
-gulp.task("default", ["webpack-agent", "webpack-client"], function () {
+gulp.task("default", ["webpack"], function () {
   nodemon({
     script: "dist/run.js",
     ignore: ["dist", "**/node_modules"],
     ext: "html css png js",
-    tasks: ["webpack-agent", "webpack-client"]
+    tasks: ["webpack"]
   });
 });

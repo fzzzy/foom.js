@@ -17,6 +17,7 @@
     "gulp-run": "1.6.8",
     "gulp-webpack": "1.4.0",
     "node-static": "0.7.6",
+    "query-string": "2.1.0",
     "random-word": "1.0.1"
   }
 }

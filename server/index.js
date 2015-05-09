@@ -16,7 +16,7 @@ exports.serve = (port) => {
         spawn("git", ["pull"], {stdio: ["ignore", process.stdout, process.stderr]});
       } else if (request.url === "/") {
         response.writeHead(302, {
-          'Location': 'http://localhost:8080/client/'
+          'Location': 'http://localhost:8080/shared/'
         });
         response.end();
       } else {
