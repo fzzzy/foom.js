@@ -3,9 +3,7 @@
 
   window.onmessage = (function () {
     return function (m) {
-      console.log("actor-boot.js got message", JSON.stringify(m.data));
       if (m.data.spawn !== undefined) {
-        console.log("m.data.spawwn", m.data.id, m.data.vat);
         window.actor_id = m.data.id;
         window.vat_id = m.data.vat;
         let node = document.createElement("script");
@@ -35,12 +33,8 @@
   }
 
   window.address = function address(vat, id) {
-    console.log("addr", vat, id);
     return function cast(msg) {
-      console.log("cast", vat, id, msg);
       window.parent.postMessage({vat: vat, id: id, cast: msg}, location.origin);
     }
   }
-
-  console.log("hello from actor-boot.js");
 }());

@@ -1,7 +1,5 @@
 
 
-console.log("hello from agent.js");
-
 let joined = [];
 
 window.oncast = function (thing) {

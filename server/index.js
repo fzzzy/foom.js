@@ -12,8 +12,8 @@ exports.serve = (port) => {
     request.addListener('end', function() {
       console.log(request.method, request.url);
       if (request.url === "/webhook") {
-        spawn("git", ["pull"], {stdio: ["ignore", process.stdout, process.stderr]});
         response.end("");
+        spawn("git", ["pull"], {stdio: ["ignore", process.stdout, process.stderr]});
       } else if (request.url === "/") {
         response.writeHead(302, {
           'Location': 'http://localhost:8080/client/'
@@ -25,32 +25,28 @@ exports.serve = (port) => {
     }).resume();
   }).listen(port);
 
-  let agent = null,
-    vats = new Map(),
+  let vats = new Map(),
     named = new Map();
 
   engine.attach(http).on('connection', function (socket) {
-    console.log("onconnection", socket.id);
     let words = [random(), random(), random(), random()];
     socket.send(JSON.stringify({name: words.join(" ")}));
 
-    socket.on('message', function(data) {
+    socket.on('message', function (data) {
       var msg = JSON.parse(data);
-      console.log("server onmessage", data);
       if (msg.hello !== undefined) {
         vats.set(msg.vat, socket);
       } else if (msg.register !== undefined) {
         if (named.has(msg.register)) {
           console.error(
-            socket.id,
-            "tried to register an already registered name:", msg.register);
+            msg.vat, msg.id,
+            "AlreadyRegisteredError:", msg.register);
+          socket.send(JSON.stringify({register: msg.register, error: "AlreadyRegisteredError"}));
         } else {
           named.set(msg.register, msg);
-          console.log("msg register success", msg.register);
         }
       } else if (msg.query !== undefined) {
         if (named.has(msg.query)) {
-          console.log("query for named thing which exists", msg);
           let it = named.get(msg.query);
           socket.send(JSON.stringify({response: "query." + msg.query,
             query_vat: msg.vat_id,
@@ -58,18 +54,17 @@ exports.serve = (port) => {
             response_vat: it.vat,
             response_id: it.id}));
         } else {
-          console.log(
-            socket.id, "query for named thing which is not registered:", msg.query)
+          console.error(
+            msg.vat, msg.id, "NotRegisteredError:", msg.query)
+          socket.send(JSON.stringify({query: msg.query, error: "NotRegisteredError"}));
         }
       } else if (msg.cast !== undefined) {
-        console.log("index.js msg.cast !== undefined", msg);
-        let socket = vats.get(msg.vat);
-        socket.send(JSON.stringify(msg));
+        vats.get(msg.vat).send(data);
       }
     });
 
     socket.on('close', function () {
-      console.log("onclose", socket.id);
+      console.log("server/index.js onclose FIXME need to clean out references to this vat");
     });
   });
 }

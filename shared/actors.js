@@ -1,10 +1,10 @@
 
 function uuid4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      let r = Math.random()*16|0,
-        v = c === 'x' ? r : (r&0x3|0x8);
-      return v.toString(16);
-  });
+  let str = '';
+  for (var i = 0; i < 15; i++) {
+   str += String.fromCharCode(Math.random() * 16 | 0);
+  }
+  return btoa(str);
 }
 
 class Actor {
@@ -45,7 +45,6 @@ export class Vat {
 
     let socket = new eio.Socket(remote_addr);
     socket.on('open', () => {
-      console.log("websocket connected to", remote_addr);
       socket.send(
         JSON.stringify(
           {hello: greet,
