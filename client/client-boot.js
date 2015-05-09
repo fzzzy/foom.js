@@ -1,4 +1,6 @@
 
+import { Vat } from "../shared/actors";
+
 console.log("hello from client-boot.js");
 
 let addr = 'ws' + window.location.origin.slice(4),
