@@ -33,18 +33,41 @@ gulp.task("transform", ["resources", "shared"], function () {
     .pipe(gulp.dest("dist"));
 });
 
-gulp.task("webpack", ["transform"], function () {
+gulp.task("webpack-index", ["transform"], function () {
   return gulp.src('dist/shared/index-boot.js')
       .pipe(webpack({
         output: { filename: "index-boot-bundle.js" }
       })).pipe(gulp.dest('dist/shared'));
 });
 
-gulp.task("default", ["webpack"], function () {
+gulp.task("webpack-actor", ["transform"], function () {
+  return gulp.src('dist/shared/actor-boot.js')
+      .pipe(webpack({
+        output: { filename: "actor-boot-bundle.js" }
+      })).pipe(gulp.dest('dist/shared'));
+});
+
+gulp.task("webpack-agent", ["transform"], function () {
+  return gulp.src('dist/agent/agent.js')
+      .pipe(webpack({
+        output: { filename: "agent-bundle.js" }
+      })).pipe(gulp.dest('dist/agent'));
+});
+
+gulp.task("webpack-client", ["transform"], function () {
+  return gulp.src('dist/client/client.js')
+      .pipe(webpack({
+        output: { filename: "client-bundle.js" }
+      })).pipe(gulp.dest('dist/client'));
+});
+
+var root_deps = ["webpack-index", "webpack-actor", "webpack-agent", "webpack-client"];
+
+gulp.task("default", root_deps, function () {
   nodemon({
     script: "dist/run.js",
     ignore: ["dist", "**/node_modules"],
     ext: "html css png js",
-    tasks: ["webpack"]
+    tasks: root_deps
   });
 });

@@ -11,8 +11,9 @@ page.onConsoleMessage = (...args) => {
 };
 
 let addr = encodeURIComponent("ws://localhost:8080"),
-  tospawn = encodeURIComponent("../agent/agent.js");
+  tospawn = encodeURIComponent("../agent/agent-bundle.js"),
+  url = `http://localhost:8080/shared/?addr=${addr}&spawn=${tospawn}&name=agent`;
 
-page.open(`http://localhost:8080/shared/?addr=${addr}&spawn=${tospawn}&name=agent`, status => {
-  console.log("phantom.js opened page with status", status);
+page.open(url, status => {
+  console.log("phantom.js opened page with status", url, status);
 });

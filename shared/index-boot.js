@@ -11,7 +11,7 @@ if (args.addr === undefined) {
 }
 
 if (args.spawn === undefined) {
-  args.spawn = "../client/client.js";
+  args.spawn = "../client/client-bundle.js";
 }
 
 let vat = new Vat(args.addr, "world");
