@@ -47,32 +47,32 @@ exports.serve = (port) => {
       } else if (msg.register !== undefined) {
         if (named.has(msg.register)) {
           console.error(
-            msg.vat, msg.id,
+            msg.from,
             "AlreadyRegisteredError:", msg.register);
           socket.send(JSON.stringify({register: msg.register, error: "AlreadyRegisteredError"}));
         } else {
-          named.set(msg.register, msg);
+          named.set(msg.register, msg.from);
         }
       } else if (msg.query !== undefined) {
         if (named.has(msg.query)) {
           let it = named.get(msg.query);
           socket.send(JSON.stringify({response: "query." + msg.query,
-            query_vat: msg.vat_id,
-            query_id: msg.actor_id,
-            response_vat: it.vat,
-            response_id: it.id}));
+            from: msg.from,
+            value: it}));
         } else {
           console.error(
-            msg.vat, msg.id, "NotRegisteredError:", msg.query)
+            msg.from, "NotRegisteredError:", msg.query);
           socket.send(JSON.stringify({query: msg.query, error: "NotRegisteredError"}));
         }
       } else if (msg.cast !== undefined) {
-        vats.get(msg.vat).send(data);
+        let to = msg.to,
+          vat = to.split("/")[0];
+        vats.get(vat).send(data);
       }
     });
 
     socket.on('close', function () {
-      console.log("server/index.js onclose FIXME need to clean out references to this vat");
+      console.warn("server/index.js onclose FIXME need to clean out references to this vat");
     });
   });
 }

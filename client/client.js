@@ -2,8 +2,6 @@
 import { Grid } from "../world/grid";
 import * as React from "react";
 
-console.log("Hello from client.js");
-
 class Playfield extends React.Component {
   render() {
     let nodes = [];
@@ -21,11 +19,8 @@ let grid = null,
   chat = [];
 
 window.oncast = function (thing) {
-  console.log("hello from client.js oncast", thing);
   if (thing.welcome !== undefined) {
     grid = new Grid(thing.welcome);
-    console.log("new grid", grid);
-    console.log("react", React);
   } else if (thing.msg !== undefined) {
     chat.push(thing.msg);
   } else {
@@ -36,10 +31,9 @@ window.oncast = function (thing) {
 
 async function main() {
   let agent = await query("agent");
-  console.log("got agent", agent);
-  let a = address(agent.vat, agent.id);
-  a({join: window.actor_id, vat: window.vat_id});
-  a({msg: "Hello, World", id: window.actor_id, vat: window.vat_id});
+  let a = address(agent.value);
+  a({join: window.me});
+  a({msg: "Hello, World", from: window.me});
 }
 
 main();

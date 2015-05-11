@@ -17,7 +17,7 @@ for (var z = 0; z < 16; z++) {
 window.oncast = function (thing) {
   console.log("agent.js oncast", JSON.stringify(thing));
   if (thing.join !== undefined) {
-    let a = address(thing.vat, thing.join);
+    let a = address(thing.join);
     joined.push(a);
     a({welcome: grid.asBase64()});
   } else if (thing.msg !== undefined) {

@@ -4,8 +4,6 @@ import { parse } from "query-string";
 
 let args = parse(location.search);
 
-console.log("query:", JSON.stringify(args));
-
 if (args.addr === undefined) {
   args.addr = 'ws' + window.location.origin.slice(4);
 }

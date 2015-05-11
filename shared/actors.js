@@ -20,8 +20,7 @@ class Actor {
     document.body.appendChild(this.frame);
     this.frame.contentWindow.onload = () => {
       let spawn_msg = {spawn: filename,
-        id: this.id,
-        vat: this.vat.id};
+        id: this.vat.id + "/" + this.id};
       this.frame.contentWindow.postMessage(spawn_msg, location.origin);
       for (let m of this.messageQueue) {
         this.frame.contentWindow.postMessage(m, location.origin);
@@ -55,11 +54,13 @@ export class Vat {
       socket.on('message', (msg) => {
         msg = JSON.parse(msg);
         if (msg.cast !== undefined) {
-          let act = this.actors.get(msg.id);
+          let [vat, id] = msg.to.split("/");
+          let act = this.actors.get(id);
           act.cast(msg.cast);
         } else if (msg.response !== undefined) {
-          if (msg.query_vat === this.id) {
-            let act = this.actors.get(msg.query_id);
+          let [vat, id] = msg.from.split("/");
+          if (vat === vat_id) {
+            let act = this.actors.get(id);
             act.cast(msg);
           }
         } else {
@@ -88,13 +89,11 @@ export class Vat {
   spawn(filename, actor_name) {
     let actor = new Actor(this, filename);
     this.actors.set(actor.id, actor);
-    console.log("spawned", actor.id, filename, actor_name);
+    console.log("spawned", this.id + "/" + actor.id, filename, actor_name);
     if (actor_name) {
-      console.log("register", actor_name, this.id, actor.id);
       this.socket.send(JSON.stringify({
         register: actor_name,
-        vat: this.id,
-        id: actor.id}));
+        from: this.id + "/" + actor.id}));
     }
     return actor;
   }
