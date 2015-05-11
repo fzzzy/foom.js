@@ -51,6 +51,7 @@ exports.serve = (port) => {
             "AlreadyRegisteredError:", msg.register);
           socket.send(JSON.stringify({register: msg.register, error: "AlreadyRegisteredError"}));
         } else {
+          console.log("registered", msg.register, msg.from);
           named.set(msg.register, msg.from);
         }
       } else if (msg.query !== undefined) {
