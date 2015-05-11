@@ -19,7 +19,7 @@ window.oncast = function (thing) {
   if (thing.join !== undefined) {
     let a = address(thing.join);
     joined.push(a);
-    a({welcome: grid.asBase64()});
+    a({welcome: grid.asJSON()});
   } else if (thing.msg !== undefined) {
     for (let a of joined) {
       a(thing);
