@@ -14,6 +14,7 @@ class Actor {
     this.filename = filename;
     this.messageQueue = [];
     this.frame = document.createElement("iframe");
+    this.frame.setAttribute("sandbox", "allow-same-origin allow-scripts");
     this.frame.src = "../shared/actor.html";
     this.frame.height = "100%";
     this.frame.width = "100%";
