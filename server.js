@@ -5,11 +5,19 @@ let engine = require('engine.io'),
   {spawn} = require('child_process'),
   random = require('random-word');
 
+const DEBUG = true;
+
 exports.serve = (port) => {
   console.log("http server listening on port", port);
 
   let http = require('http').createServer(function(request, response) {
     request.addListener('end', function() {
+      if (DEBUG) {
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Expires", "0");
+      }
+
       console.log(request.method, request.url);
       if (request.url === "/webhook") {
         response.end("");

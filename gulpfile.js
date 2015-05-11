@@ -14,7 +14,8 @@ gulp.task("shared", function () {
   return gulp.src(
     ["shared/browser-polyfill.js",
     "shared/engine.io.js",
-    "shared/es6-module-loader.js"]
+    "shared/es6-module-loader.js",
+    "shared/es6-module-loader.js.map"]
   ).pipe(gulp.dest('dist/shared'));
 });
 

@@ -15,6 +15,8 @@ class Actor {
     this.messageQueue = [];
     this.frame = document.createElement("iframe");
     this.frame.src = "../shared/actor.html";
+    this.frame.height = "100%";
+    this.frame.width = "100%";
     document.body.appendChild(this.frame);
     this.frame.contentWindow.onload = () => {
       let spawn_msg = {spawn: filename,

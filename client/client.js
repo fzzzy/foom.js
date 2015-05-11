@@ -1,20 +1,37 @@
 
 import { Grid } from "../world/grid";
+import * as React from "react";
 
 console.log("Hello from client.js");
 
-let grid = null;
+class Playfield extends React.Component {
+  render() {
+    let nodes = [];
+    for (let i in this.props.chat) {
+      let el = this.props.chat[i];
+      nodes.push(<div key={ "chat." + i }>Chat: { el }</div>);
+    }
+    return <div>
+      { nodes }
+    </div>;
+  }
+}
+
+let grid = null,
+  chat = [];
 
 window.oncast = function (thing) {
   console.log("hello from client.js oncast", thing);
   if (thing.welcome !== undefined) {
     grid = new Grid(thing.welcome);
     console.log("new grid", grid);
+    console.log("react", React);
   } else if (thing.msg !== undefined) {
-    let node = document.createElement("div");
-    node.textContent = thing.msg;
-    document.body.appendChild(node);
+    chat.push(thing.msg);
+  } else {
+    return;
   }
+  React.render(<Playfield chat={ chat } />, document.getElementById("content"));
 }
 
 async function main() {
