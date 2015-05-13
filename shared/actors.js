@@ -1,4 +1,7 @@
 
+
+const DEBUG = true;
+
 function uuid4() {
   let str = '';
   for (var i = 0; i < 15; i++) {
@@ -73,6 +76,9 @@ export class Vat {
 
       socket.on("close", function (msg) {
         console.log("The socket was closed.");
+        if (DEBUG === true) {
+          window.location = window.location;
+        }
       });
     });
 

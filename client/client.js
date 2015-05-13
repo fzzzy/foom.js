@@ -21,10 +21,35 @@ const COLORS = [
   "rgb(68, 34, 153)"
 ];
 
-const OFFSET = 16;
+const TILE_SIZE = 32,
+  OFFSET = Math.floor(TILE_SIZE / 2),
+  NUDGE = Math.floor(OFFSET / 4);
 
 class GridComponent extends React.Component {
   render() {
+    let things = [];
+    if (this.props.things) {
+      for (let thing of this.props.things) {
+        let z_offset = (15 - thing.z) * OFFSET,
+          right = (TILE_SIZE * (15 - thing.x)) + OFFSET - NUDGE,
+          top = TILE_SIZE * thing.y - NUDGE + TILE_SIZE;
+
+        things.push(<svg
+          key={ `things.${thing.thing}` }
+          xmlns="http://www.w3.org/2000/svg"
+          version="1.1"
+          style={{
+            height: "8px", width: "8px",
+            position: "absolute",
+            right: right + "px",
+            top: top + "px"}}>
+          <rect
+            width="8"
+            height="8"
+            fill="black" />
+        </svg>);
+      }
+    }
     let lines = [];
     for (let y = 0; y < 16; y++) {
       let line = [];
@@ -55,7 +80,12 @@ class GridComponent extends React.Component {
           </svg>
         );
       }
-        lines.push(<div key={ `row.${y}` } style={{ height: "32px" }}>{ line }</div>);
+        lines.push(<div
+          key={ `row.${y}` }
+          style={{
+            height: "32px"}}>
+          { line }
+        </div>);
     }
     let offset = this.props.z * OFFSET;
     return <div style={{
@@ -63,10 +93,11 @@ class GridComponent extends React.Component {
       position: "absolute",
       top: (256 - this.props.z * OFFSET) + "px",
       right: (OFFSET + offset) + "px",
-      left: "0px",
-      height: "536px",
+      width: "1000px",
+      height: "544px",
       textAlign: "right" }}>
       { lines }
+      { things }
     </div>
   }
 }
@@ -79,8 +110,16 @@ class Playfield extends React.Component {
       nodes.push(<div key={ "chat." + i }>Chat: { el }</div>);
     }
     let slices = [];
+    let things = new Array(16);
+    for (let i = 0, l = this.props.grid.things.length; i < l; i++) {
+      let t = this.props.grid.things[i];
+      if (things[t.z] === undefined) {
+        things[t.z] = [];
+      }
+      things[t.z].push(t);
+    }
     for (let i = 0; i < 16; i++) {
-      slices.push(<GridComponent key={ "slice." + i } grid={ this.props.grid } z={ i } />);
+      slices.push(<GridComponent key={ "slice." + i } grid={ this.props.grid } z={ i } things={ things[i] }/>);
     }
     return <div>
       { slices }
@@ -90,10 +129,15 @@ class Playfield extends React.Component {
 }
 
 let grid = null,
-  chat = [];
+  chat = [],
+  keys = new Map(),
+  keypress = null;
 
 window.oncast = function (thing) {
   if (thing.welcome !== undefined) {
+    console.log("grid",
+      Object.getOwnPropertyNames(thing.welcome),
+      thing.welcome.things);
     grid = new Grid(thing.welcome);
   } else if (thing.msg !== undefined) {
     chat.push(thing.msg);
@@ -103,6 +147,39 @@ window.oncast = function (thing) {
   React.render(<Playfield chat={ chat } grid={ grid } />, document.getElementById("content"));
 }
 
+function findKey(e) {
+  if (e.keyCode === 37) {
+    return "w";
+  } else if (e.keyCode === 38) {
+    return "n";
+  } else if (e.keyCode === 39) {
+    return "e";
+  } else if (e.keyCode === 40) {
+    return "s";
+  }
+}
+
+window.onkeydown = function (e) {
+  let key = findKey(e);
+  if (key && !keys.has(key)) {
+    keys.set(key, true);
+    keypress();
+    e.preventDefault();
+    return false;
+  }
+  return true;
+};
+
+window.onkeyup = function (e) {
+  let key = findKey(e);
+  if (key) {
+    keys.delete(key);
+    e.preventDefault();
+    return false;
+  }
+  return true;
+};
+
 async function main() {
   let agent = await query("agent");
   let a = address(agent.value);
@@ -111,6 +188,14 @@ async function main() {
   setTimeout(function () {
     a({msg: "another message", from: window.me});
   }, 1000);
+  keypress = function keypress() {
+    let [...pressed] = keys.keys();
+    if (pressed.length) {
+      console.log("pressed", pressed);
+      a({move: pressed, from: window.me});
+    }
+  }
+  setInterval(keypress, 500);
 }
 
 main();
