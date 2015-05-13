@@ -25,28 +25,65 @@ const TILE_SIZE = 32,
   OFFSET = Math.floor(TILE_SIZE / 2),
   NUDGE = Math.floor(OFFSET / 4);
 
+let grid = null,
+  chat = [],
+  keys = new Map(),
+  keypress = null,
+  gridInitialized = false,
+  keyInterval = null,
+  ignoreKeys = false;
+
+function calculateThingTopRight(thing) {
+  let z_offset = (15 - thing.z) * OFFSET,
+    right = (TILE_SIZE * (15 - thing.x)) + OFFSET - NUDGE,
+    top = TILE_SIZE * thing.y - NUDGE + TILE_SIZE;
+    return [top, right];
+}
+
+function calculatePointsFromHeading(head) {
+  let points = null;
+  if (head.indexOf("n") !== -1 && head.indexOf("w") !== -1) {
+    points = "2,2 8,4 4,8 2,2";
+  } else if (head.indexOf("n") !== -1 && head.indexOf("e") !== -1) {
+      points = "6,2 4,8 0,4 6,2";
+  } else if (head.indexOf("s") !== -1 && head.indexOf("e") !== -1) {
+      points = "6,6 0,4 4,0 6,6";
+  } else if (head.indexOf("s") !== -1 && head.indexOf("w") !== -1) {
+      points = "2,6 4,0 8,4 2,6";
+  } else if (head.indexOf("w") !== -1) {
+      points = "1,4 8,0 8,8 0,4";
+  } else if (head.indexOf("n") !== -1) {
+    points = "4,0 8,8 0,8 4,0";
+  } else if (head.indexOf("e") !== -1) {
+    points = "8,4 0,8 0,0 8,4";
+  } else if (head.indexOf("s") !== -1) {
+    points = "4,8 0,0 8,0 4,8";
+  }
+  return points;
+}
+
 class GridComponent extends React.Component {
   render() {
     let things = [];
     if (this.props.things) {
       for (let thing of this.props.things) {
-        let z_offset = (15 - thing.z) * OFFSET,
-          right = (TILE_SIZE * (15 - thing.x)) + OFFSET - NUDGE,
-          top = TILE_SIZE * thing.y - NUDGE + TILE_SIZE;
+        let [top, right] = calculateThingTopRight(thing);
 
         things.push(<svg
           key={ `things.${thing.thing}` }
+          id={ `thing.${thing.thing}` }
+          className="thing"
           xmlns="http://www.w3.org/2000/svg"
           version="1.1"
           style={{
             height: "8px", width: "8px",
             position: "absolute",
+            transition: "top 0.25s, right 0.25s",
             right: right + "px",
             top: top + "px"}}>
-          <rect
-            width="8"
-            height="8"
-            fill="black" />
+          <polygon points={ calculatePointsFromHeading(thing.heading) }
+            stroke="white"
+            fill={ COLORS[Math.floor(Math.random() * 15) + 1] } />
         </svg>);
       }
     }
@@ -66,7 +103,8 @@ class GridComponent extends React.Component {
         let left = (16 - x) * OFFSET - OFFSET;
         line.push(
           <svg
-            key={ `grid.${x},${y}` }
+            id={ `tile.${x},${y},${this.props.z}`}
+            key={ `grid.${x},${y},${this.props.z}` }
             xmlns="http://www.w3.org/2000/svg"
             version="1.1"
             style={{height: "48px", width: "48px", position: "relative", left: left + "px"}}>
@@ -88,14 +126,16 @@ class GridComponent extends React.Component {
         </div>);
     }
     let offset = this.props.z * OFFSET;
-    return <div style={{
-      overflow: "hidden",
-      position: "absolute",
-      top: (256 - this.props.z * OFFSET) + "px",
-      right: (OFFSET + offset) + "px",
-      width: "1000px",
-      height: "544px",
-      textAlign: "right" }}>
+    return <div
+      id={ `slice.${this.props.z}` }
+      style={{
+        overflow: "hidden",
+        position: "absolute",
+        top: (256 - this.props.z * OFFSET) + "px",
+        right: (OFFSET + offset) + "px",
+        width: "1000px",
+        height: "544px",
+        textAlign: "right" }}>
       { lines }
       { things }
     </div>
@@ -121,17 +161,12 @@ class Playfield extends React.Component {
     for (let i = 0; i < 16; i++) {
       slices.push(<GridComponent key={ "slice." + i } grid={ this.props.grid } z={ i } things={ things[i] }/>);
     }
-    return <div>
+    return <div id="chat">
       { slices }
       { nodes }
     </div>;
   }
 }
-
-let grid = null,
-  chat = [],
-  keys = new Map(),
-  keypress = null;
 
 window.oncast = function (thing) {
   if (thing.welcome !== undefined) {
@@ -141,10 +176,77 @@ window.oncast = function (thing) {
     grid = new Grid(thing.welcome);
   } else if (thing.msg !== undefined) {
     chat.push(thing.msg);
-  } else {
+    let parent = document.getElementById("chat"),
+      node = document.createElement("div");
+    node.textContent = `Chat: ${thing.msg}`;
+    parent.appendChild(node);
     return;
+  } else if (thing.moved !== undefined) {
+    let [x, y, z] = thing.to,
+      node = document.getElementById(`thing.${thing.moved}`),
+      [top, right] = calculateThingTopRight({x: x, y: y, z: z}),
+      level_shift = grid.moveto(thing.moved, thing.to);
+
+    node.firstChild.setAttribute(
+      "points", calculatePointsFromHeading(thing.heading));
+
+    function transitionListener(cb) {
+      function listener() {
+        if (cb !== undefined) {
+          cb();
+        }
+        node.removeEventListener('transitionend', listener, false);
+        ignoreKeys = false;
+      }
+      node.addEventListener('transitionend', listener, false);
+      ignoreKeys = true;
+    }
+
+    if (level_shift < 0) {
+      transitionListener(function () {
+        let slice = document.getElementById(`slice.${z}`);
+        node.parentNode.removeChild(node);
+        slice.insertBefore(node, slice.firstChild);
+      });
+
+    } else if (level_shift > 0) {
+      let slice = document.getElementById(`slice.${z}`);
+      node.parentNode.removeChild(node);
+      slice.insertBefore(node, slice.firstChild);
+      transitionListener();
+    } else {
+      if (parseInt(node.style.top) !== top || parseInt(node.style.right) !== right){
+        transitionListener();
+      }
+    }
+
+
+    setTimeout(function() {
+      node.style.top = `${top}px`;
+      node.style.right = `${right}px`;
+    }, 1);
+
+    return;
+  } else if (thing.dig !== undefined) {
+    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`);
+    for (let i = 0; i < tile.childNodes.length; i++) {
+      tile.childNodes[i].style.fill = "transparent";
+      tile.childNodes[i].style.stroke = "transparent";
+    }
+    console.log("dig", thing);
+    return;
+  } else if (thing.get !== undefined) {
+    let el = document.createElement("div");
+    el.textContent = thing.get + " get!";
+    document.body.appendChild(el);
+    let player = grid.addInventory(window.me, thing.get);
+    return;
+  } else {
+    console.log("client got message", thing);
   }
-  React.render(<Playfield chat={ chat } grid={ grid } />, document.getElementById("content"));
+  if (grid !== null) {
+    React.render(<Playfield chat={ chat } grid={ grid } />, document.getElementById("content"));
+  }
 }
 
 function findKey(e) {
@@ -156,29 +258,43 @@ function findKey(e) {
     return "e";
   } else if (e.keyCode === 40) {
     return "s";
+  } else if (e.keyCode === 32) {
+    return "dig";
   }
 }
 
-window.onkeydown = function (e) {
+window.addEventListener("keydown", function (e) {
   let key = findKey(e);
-  if (key && !keys.has(key)) {
+  if (!ignoreKeys && key && !keys.has(key)) {
     keys.set(key, true);
-    keypress();
+    if (keyInterval === null) {
+      keypress();
+      keyInterval = setInterval(keypress, 500);
+    }
+    e.preventDefault();
+    return false;
+  }
+  if (key) {
     e.preventDefault();
     return false;
   }
   return true;
-};
+});
 
-window.onkeyup = function (e) {
+window.addEventListener("keyup", function (e) {
   let key = findKey(e);
   if (key) {
     keys.delete(key);
+    let [...ks] = keys.keys();
+    if (ks.length === 0) {
+      clearInterval(keyInterval);
+      keyInterval = null;
+    }
     e.preventDefault();
     return false;
   }
   return true;
-};
+});
 
 async function main() {
   let agent = await query("agent");
@@ -191,11 +307,17 @@ async function main() {
   keypress = function keypress() {
     let [...pressed] = keys.keys();
     if (pressed.length) {
-      console.log("pressed", pressed);
-      a({move: pressed, from: window.me});
+      let digIndex = pressed.indexOf("dig");
+      if (digIndex !== -1) {
+        pressed.splice(digIndex, 1);
+        a({dig: window.me});
+      }
+      if (pressed.length) {
+        //console.log("pressed", pressed);
+        a({move: pressed, from: window.me});
+      }
     }
   }
-  setInterval(keypress, 500);
 }
 
 main();

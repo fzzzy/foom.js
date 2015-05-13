@@ -45,11 +45,13 @@ export class Grid {
     let zt = 14;
     for (; zt > 0; zt--) {
       if (this.get(x, y, zt) !== 0) {
-        console.log("found the highest point", zt);
         break;
       }
     }
-    this.things.push({thing: thing, x: x, y: y, z: zt + 1});
+    this.things.push({
+      thing: thing, x: x, y: y, z: zt + 1,
+      heading: ["n"],
+      inventory: []});
   }
 
   find(thing) {
@@ -69,16 +71,21 @@ export class Grid {
   }
 
   move(thing, directions) {
-    let t = null;
+    let t = {},
+      original = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
-        t = this.things[i];
+        original = this.things[i]
+        Object.assign(t, original);
       }
     }
     if (t === null) {
       console.error("thing not found", this.things, thing);
       return;
     }
+
+    t.heading = directions;
+
     if (directions.indexOf("w") !== -1) {
       t.x -= 1;
     }
@@ -103,12 +110,100 @@ export class Grid {
     } else if (t.y > 15) {
       t.y = 0;
     }
-    for (let z = 15; z > 0; z--) {
-      if (this.get(t.x, t.y, z) !== 0) {
-        t.z = z + 1;
-        break;
+    if (this.get(t.x, t.y, t.z) !== 0 || this.get(t.x, t.y, t.z - 1) === 0) {
+      for (let z = 15; z >= 0; z--) {
+        if (this.get(t.x, t.y, z) !== 0) {
+          t.z = z + 1;
+          break;
+        }
       }
     }
+    //console.log("moving with z offset", t.z - original.z);
+    for (let other of this.things) {
+      if (other.x === t.x && other.y === t.y && other.z === t.z) {
+        original.heading = t.heading;
+        return false;
+      }
+    }
+    if (t.z - original.z > 1) {
+      original.heading = t.heading;
+      return false;
+    } else if ((t.z - original.z) === 1) {
+      if (this.get(original.x, original.y, t.z) !== 0) {
+        original.heading = t.heading;
+        return false;
+      }
+    }
+    Object.assign(original, t);
+    return true;
+  }
+
+  moveto(thing, loc) {
+    let t = null;
+    for (var i = 0, l = this.things.length; i < l; i++) {
+      if (this.things[i].thing === thing) {
+        t = this.things[i];
+      }
+    }
+    if (t === null) {
+      console.error("thing not found", this.things, thing);
+      return;
+    }
+    let changed_z = loc[2] - t.z;
+    [t.x, t.y, t.z] = loc;
+    return changed_z;
+  }
+
+  dig(thing) {
+    let t = null;
+    for (var i = 0, l = this.things.length; i < l; i++) {
+      if (this.things[i].thing === thing) {
+        t = this.things[i];
+      }
+    }
+    if (t === null) {
+      console.error("thing not found", this.things, thing);
+      return;
+    }
+    let {x, y, z, heading} = t;
+    if (heading.indexOf("n") !== -1) {
+      y--;
+    }
+    if (heading.indexOf("e") !== -1) {
+      x++;
+    }
+    if (heading.indexOf("s") !== -1) {
+      y++;
+    }
+    if (heading.indexOf("w") !== -1) {
+      x--;
+    }
+    let oldval = null;
+    if ((oldval = this.get(x, y, z)) === 0) {
+      if (z > 1) {
+        z--;
+        if ((oldval = this.get(x, y, z)) === 0) {
+          console.log("dig empty space");
+          return [-1, -1, -1];
+        }
+      }
+    }
+    this.set(x, y, z, 0);
+    return [x, y, z, oldval];
+  }
+
+  addInventory(player, item) {
+    let t = null;
+    for (var i = 0, l = this.things.length; i < l; i++) {
+      if (this.things[i].thing === player) {
+        t = this.things[i];
+      }
+    }
+    if (t === null) {
+      console.error("thing not found", this.things, thing);
+      return;
+    }
+    t.inventory.push(item);
   }
 
   asJSON() {

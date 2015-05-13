@@ -3,24 +3,29 @@
 import { Grid } from "../world/grid";
 
 let joined = [],
-  i = 15,
   zt = 14,
   grid = new Grid();
 
 for (let y = 0; y < 16; y++) {
   for (let x = 0; x < 16; x++) {
-    zt = i;
-    if (zt === 15) { zt = 14; }
-    if (zt === 0) { zt = 1; }
+    let rnd = Math.random();
+    zt = 15 - y;
+
+    if (rnd < 0.13) {
+      zt--;
+    } else if (rnd > 0.87) {
+      zt++;
+    }
+
+    if (zt > 15) { zt = 15; }
+    if (zt <= 1) { zt = 1; }
     for (let z = 0; z < zt; z++) {
-      grid.set(x, y, z, i || 1);
+      grid.set(x, y, z, z || 1);
     }
   }
-  if (--i < 0) { i = 15; }
 }
 
 window.oncast = function (thing) {
-  //console.log("agent.js oncast", JSON.stringify(thing));
   if (thing.join !== undefined) {
     console.log("joined", thing.join);
     let a = address(thing.join);
@@ -38,8 +43,19 @@ window.oncast = function (thing) {
       pressed = thing.move;
 
     for (let a of joined) {
-      a({welcome: grid.asJSON()});
+      a({moved: thing.from, to: loc, heading: thing.move});
     }
-    console.log("loc", pressed, loc);
+  } else if (thing.dig !== undefined) {
+    let [x, y, z, oldval] = grid.dig(thing.dig);
+    if (x !== -1 && y !== -1 && z !== -1) {
+      let digger = address(thing.dig);
+      grid.addInventory(thing.dig, oldval);
+      digger({get: oldval});
+      for (let a of joined) {
+        a({dig: thing.dig, x: x, y: y, z: z});
+      }
+    }
+  } else {
+    console.log("agent.js oncast", JSON.stringify(thing));
   }
 }
