@@ -379,12 +379,14 @@ async function main() {
       let placeIndex = pressed.indexOf("place");
       if (placeIndex !== -1) {
         pressed.splice(placeIndex, 1);
-        let inv = document.getElementById("inventory"),
-          color = inv.firstChild.style.backgroundColor;
-        for (let i = 0, l = COLORS.length; i < l; i++) {
-          if (COLORS[i] === color) {
-            agent({place: window.me, block: i});
-            break;
+        let inv = document.getElementById("inventory");
+        if (inv.firstChild) {
+          let color = inv.firstChild.style.backgroundColor;
+          for (let i = 0, l = COLORS.length; i < l; i++) {
+            if (COLORS[i] === color) {
+              agent({place: window.me, block: i});
+              break;
+            }
           }
         }
       }
