@@ -292,6 +292,7 @@ window.oncast = function (thing) {
       color = inv.firstChild.style.backgroundColor;
 
     inv.removeChild(inv.firstChild);
+    return;
   } else if (thing.get !== undefined) {
     let el = document.createElement("div");
     el.textContent = thing.get + " get!";
