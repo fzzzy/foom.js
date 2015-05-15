@@ -49,10 +49,20 @@ window.oncast = function (thing) {
     let [x, y, z, oldval] = grid.dig(thing.dig);
     if (x !== -1 && y !== -1 && z !== -1) {
       let digger = address(thing.dig);
-      grid.addInventory(thing.dig, oldval);
       digger({get: oldval});
       for (let a of joined) {
         a({dig: thing.dig, x: x, y: y, z: z});
+      }
+    }
+  } else if (thing.place !== undefined) {
+    console.log("place", JSON.stringify(thing));
+    let [x, y, z, color] = grid.place(thing.place, thing.block);
+    if (x !== -1 && y !== -1 && z !== -1) {
+      let placer = address(thing.place);
+      placer({placed: color});
+      console.log("place", x, y, z, color);
+      for (let a of joined) {
+        a({place: thing.place, x: x, y: y, z: z, block: color});
       }
     }
   } else {

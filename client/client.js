@@ -25,7 +25,8 @@ const TILE_SIZE = 32,
   OFFSET = Math.floor(TILE_SIZE / 2),
   NUDGE = Math.floor(OFFSET / 4);
 
-let grid = null,
+let agent = null,
+  grid = null,
   chat = [],
   keys = new Map(),
   keypress = null,
@@ -83,7 +84,7 @@ class GridComponent extends React.Component {
             top: top + "px"}}>
           <polygon points={ calculatePointsFromHeading(thing.heading) }
             stroke="white"
-            fill={ COLORS[Math.floor(Math.random() * 15) + 1] } />
+            fill={ COLORS[thing.color] } />
         </svg>);
       }
     }
@@ -132,9 +133,9 @@ class GridComponent extends React.Component {
         overflow: "hidden",
         position: "absolute",
         top: (256 - this.props.z * OFFSET) + "px",
-        right: (OFFSET + offset) + "px",
+        right: offset + "px",
         width: "1000px",
-        height: "544px",
+        height: "528px",
         textAlign: "right" }}>
       { lines }
       { things }
@@ -143,6 +144,15 @@ class GridComponent extends React.Component {
 }
 
 class Playfield extends React.Component {
+  submitChat(e) {
+    e.preventDefault();
+    let chat = document.getElementById("cmdline"),
+      inpt = chat.value;
+
+    chat.value = "";
+    agent({msg: inpt, from: window.me});
+  }
+
   render() {
     let nodes = [];
     for (let i in this.props.chat) {
@@ -161,9 +171,33 @@ class Playfield extends React.Component {
     for (let i = 0; i < 16; i++) {
       slices.push(<GridComponent key={ "slice." + i } grid={ this.props.grid } z={ i } things={ things[i] }/>);
     }
-    return <div id="chat">
+    return <div>
       { slices }
       { nodes }
+      <div id="chat" style={{
+        fontFamily: "Gill Sans Light, sans-serif",
+        fontSize: "12pt",
+        color: "black",
+        textShadow: "-1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white",
+        paddingTop: "32px",
+        paddingBottom: "2em",
+        position: "relative"}}><span></span></div>
+      <form  style={{
+        boxSizing: "border-box",
+        border: "1px solid #ababab",
+        backgroundColor: "white",
+        padding: "0.25em",
+        position: "fixed",
+        bottom: "0.25em",
+        left: "0.25em",
+        width: "30em"
+        }} onSubmit={ this.submitChat.bind(this) }>
+        <input
+          id="cmdline"
+          type="text"
+          style={{ width: "85%" }} />
+        <button style={{ marginLeft: "0.75em", width: "11%" }}>chat</button>
+      </form>
     </div>;
   }
 }
@@ -179,7 +213,7 @@ window.oncast = function (thing) {
     let parent = document.getElementById("chat"),
       node = document.createElement("div");
     node.textContent = `Chat: ${thing.msg}`;
-    parent.appendChild(node);
+    parent.insertBefore(node, parent.firstChild);
     return;
   } else if (thing.moved !== undefined) {
     let [x, y, z] = thing.to,
@@ -228,17 +262,40 @@ window.oncast = function (thing) {
 
     return;
   } else if (thing.dig !== undefined) {
-    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`);
+    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`),
+      fill = tile.firstChild.getAttribute("fill");
+
     for (let i = 0; i < tile.childNodes.length; i++) {
       tile.childNodes[i].style.fill = "transparent";
       tile.childNodes[i].style.stroke = "transparent";
     }
-    console.log("dig", thing);
+    let el = document.createElement("div");
+    el.style.display = "inline-block";
+    el.style.backgroundColor = fill;
+    el.style.height = "32px";
+    el.style.width = "32px";
+    document.getElementById("inventory").appendChild(el);
+    console.log("dig", thing, fill);
     return;
+  } else if (thing.place !== undefined) {
+    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`),
+      color = COLORS[thing.block];
+
+    for (let i = 0; i < tile.childNodes.length; i++) {
+      tile.childNodes[i].style.fill = color;
+      tile.childNodes[i].style.stroke = "black";
+    }
+    console.log("place", thing, color);
+    return;
+  } else if (thing.placed !== undefined) {
+    let inv = document.getElementById("inventory"),
+      color = inv.firstChild.style.backgroundColor;
+
+    inv.removeChild(inv.firstChild);
   } else if (thing.get !== undefined) {
     let el = document.createElement("div");
     el.textContent = thing.get + " get!";
-    document.body.appendChild(el);
+    document.getElementById("chat").appendChild(el);
     let player = grid.addInventory(window.me, thing.get);
     return;
   } else {
@@ -260,6 +317,10 @@ function findKey(e) {
     return "s";
   } else if (e.keyCode === 32) {
     return "dig";
+  } else if (e.keyCode === 13) {
+    return "place";
+  } else {
+    console.log("unknown key", e.keyCode);
   }
 }
 
@@ -297,12 +358,14 @@ window.addEventListener("keyup", function (e) {
 });
 
 async function main() {
-  let agent = await query("agent");
-  let a = address(agent.value);
-  a({join: window.me});
-  a({msg: "Hello, World", from: window.me});
+  let agent_addr = await query("agent");
+  agent = address(agent_addr.value);
+  agent({join: window.me});
+  agent({msg: "Hello, World", from: window.me});
   setTimeout(function () {
-    a({msg: "another message", from: window.me});
+    for (let i = 0; i < 6; i++) {
+      agent({msg: "another message " + i, from: window.me});
+    }
   }, 1000);
   keypress = function keypress() {
     let [...pressed] = keys.keys();
@@ -310,14 +373,30 @@ async function main() {
       let digIndex = pressed.indexOf("dig");
       if (digIndex !== -1) {
         pressed.splice(digIndex, 1);
-        a({dig: window.me});
+        agent({dig: window.me});
+      }
+      let placeIndex = pressed.indexOf("place");
+      if (placeIndex !== -1) {
+        pressed.splice(placeIndex, 1);
+        let inv = document.getElementById("inventory"),
+          color = inv.firstChild.style.backgroundColor;
+        for (let i = 0, l = COLORS.length; i < l; i++) {
+          if (COLORS[i] === color) {
+            agent({place: window.me, block: i});
+            break;
+          }
+        }
       }
       if (pressed.length) {
         //console.log("pressed", pressed);
-        a({move: pressed, from: window.me});
+        agent({move: pressed, from: window.me});
       }
     }
   }
 }
 
 main();
+
+window.addEventListener("load", function (e) {
+  document.body.focus();
+}, true);

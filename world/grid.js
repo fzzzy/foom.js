@@ -51,13 +51,14 @@ export class Grid {
     this.things.push({
       thing: thing, x: x, y: y, z: zt + 1,
       heading: ["n"],
+      color: Math.floor(Math.random() * 15) + 1,
       inventory: []});
   }
 
   find(thing) {
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
-        return [this.things[i].x, this.things[i].y, this.things[i].z];
+        return [this.things[i].x, this.things[i].y, this.things[i].z, this.things[i].heading];
       }
     }
   }
@@ -154,7 +155,7 @@ export class Grid {
     return changed_z;
   }
 
-  dig(thing) {
+  digOrPlace(thing, cb) {
     let t = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
@@ -178,18 +179,45 @@ export class Grid {
     if (heading.indexOf("w") !== -1) {
       x--;
     }
-    let oldval = null;
-    if ((oldval = this.get(x, y, z)) === 0) {
-      if (z > 1) {
-        z--;
-        if ((oldval = this.get(x, y, z)) === 0) {
-          console.log("dig empty space");
-          return [-1, -1, -1];
+    return cb(x, y, z);
+  }
+
+  dig(thing) {
+    return this.digOrPlace(thing, (x, y, z) => {
+      let oldval = null;
+      if ((oldval = this.get(x, y, z)) === 0) {
+        if (z > 1) {
+          z--;
+          if ((oldval = this.get(x, y, z)) === 0) {
+            console.log("dig empty space");
+            return [-1, -1, -1];
+          }
         }
       }
-    }
-    this.set(x, y, z, 0);
-    return [x, y, z, oldval];
+      this.addInventory(thing, oldval);
+      this.set(x, y, z, 0);
+      return [x, y, z, oldval];
+    });
+  }
+
+  place(thing, color) {
+    return this.digOrPlace(thing, (x, y, z) => {
+      let newz = z - 1;
+      if (z > 1) {
+        console.log("place", x, y, z, z - 1);
+        if (this.get(x, y, z - 1) !== 0) {
+          newz = z;
+          console.log("lower place was occupied");
+          if (this.get(x, y, z) !== 0) {
+            console.log("place full space");
+            return [-1, -1, -1];
+          }
+        }
+      }
+      this.removeInventory(thing, color);
+      this.set(x, y, newz, color);
+      return [x, y, newz, color];
+    });
   }
 
   addInventory(player, item) {
@@ -200,10 +228,28 @@ export class Grid {
       }
     }
     if (t === null) {
-      console.error("thing not found", this.things, thing);
+      console.error("player not found", this.things, thing);
       return;
     }
     t.inventory.push(item);
+  }
+
+  removeInventory(player, item) {
+    let t = null;
+    for (var i = 0, l = this.things.length; i < l; i++) {
+      if (this.things[i].thing === player) {
+        t = this.things[i];
+      }
+    }
+    if (t === null) {
+      console.error("player not found", this.things, thing);
+      return;
+    }
+    let indexOf = t.inventory.indexOf(item);
+    if (indexOf === -1) {
+      console.error("item not found", player, this.things, item);
+    }
+    t.inventory.splice(indexOf, 1);
   }
 
   asJSON() {
