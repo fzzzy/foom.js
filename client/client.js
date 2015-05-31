@@ -2,28 +2,31 @@
 import { Grid } from "../world/grid";
 import * as React from "react";
 
+function rgb(r, g, b) {
+  return new THREE.MeshBasicMaterial(
+    {color: (r << 16) + (g << 8) + b});
+}
+
 const COLORS = [
-  "transparent",
-  "rgb(248, 12, 18)",
-  "rgb(255, 68, 34)",
-  "rgb(255, 102, 68)",
-  "rgb(255, 153, 51)",
-  "rgb(254, 174, 45)",
-  "rgb(204, 187, 51)",
-  "rgb(208, 195, 16)",
-  "rgb(170, 204, 34)",
-  "rgb(105, 208, 37)",
-  "rgb(18, 189, 185)",
-  "rgb(17, 170, 187)",
-  "rgb(68, 68, 221)",
-  "rgb(51, 17, 187)",
-  "rgb(59, 12, 189)",
-  "rgb(68, 34, 153)"
+  new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
+  rgb(248, 12, 18),
+  rgb(255, 68, 34),
+  rgb(255, 102, 68),
+  rgb(255, 153, 51),
+  rgb(254, 174, 45),
+  rgb(204, 187, 51),
+  rgb(208, 195, 16),
+  rgb(170, 204, 34),
+  rgb(105, 208, 37),
+  rgb(18, 189, 185),
+  rgb(17, 170, 187),
+  rgb(68, 68, 221),
+  rgb(51, 17, 187),
+  rgb(59, 12, 189),
+  rgb(68, 34, 153),
 ];
 
-const TILE_SIZE = 32,
-  OFFSET = Math.floor(TILE_SIZE / 2),
-  NUDGE = Math.floor(OFFSET / 4);
+console.log("COLORS", COLORS);
 
 let agent = null,
   grid = null,
@@ -32,14 +35,8 @@ let agent = null,
   keypress = null,
   gridInitialized = false,
   keyInterval = null,
-  ignoreKeys = false;
-
-function calculateThingTopRight(thing) {
-  let z_offset = (15 - thing.z) * OFFSET,
-    right = (TILE_SIZE * (15 - thing.x)) + OFFSET - NUDGE,
-    top = TILE_SIZE * thing.y - NUDGE + TILE_SIZE;
-    return [top, right];
-}
+  ignoreKeys = false,
+  render = null;
 
 function calculatePointsFromHeading(head) {
   let points = null;
@@ -63,247 +60,126 @@ function calculatePointsFromHeading(head) {
   return points;
 }
 
-class GridComponent extends React.Component {
-  render() {
-    let things = [];
-    if (this.props.things) {
-      for (let thing of this.props.things) {
-        let [top, right] = calculateThingTopRight(thing);
+let cubes = new Map(),
+  outlines = new Map(),
+  tetras = new Map();
 
-        things.push(<svg
-          key={ `things.${thing.thing}` }
-          id={ `thing.${thing.thing}` }
-          className="thing"
-          xmlns="http://www.w3.org/2000/svg"
-          version="1.1"
-          style={{
-            height: "8px", width: "8px",
-            position: "absolute",
-            transition: "top 0.25s, right 0.25s",
-            right: right + "px",
-            top: top + "px"}}>
-          <polygon points={ calculatePointsFromHeading(thing.heading) }
-            stroke="white"
-            fill={ COLORS[thing.color] } />
-        </svg>);
-      }
-    }
-    let lines = [];
-    for (let y = 0; y < 16; y++) {
-      let line = [];
-      for (let x = 0; x < 16; x++) {
-        let value = this.props.grid.get(x, y, this.props.z),
-          fill = COLORS[value],
-          stroke = "black";
-
-        if (value === 0) {
-          fill = `rgba(0,0,0,0)`;
-          stroke = "none";
-        }
-
-        let left = (16 - x) * OFFSET - OFFSET;
-        line.push(
-          <svg
-            id={ `tile.${x},${y},${this.props.z}`}
-            key={ `grid.${x},${y},${this.props.z}` }
-            xmlns="http://www.w3.org/2000/svg"
-            version="1.1"
-            style={{height: "48px", width: "48px", position: "relative", left: left + "px"}}>
-            <polyline points="0 0 32 0 48 16 48 48 32 32 48 48 16 48 0 32 0 0"
-              stroke={ stroke } strokeWidth="1" fill= { fill } />
-            <rect
-              width="32"
-              height="32"
-              stroke={ stroke }
-              fill={ fill } />
-          </svg>
-        );
-      }
-        lines.push(<div
-          key={ `row.${y}` }
-          style={{
-            height: "32px"}}>
-          { line }
-        </div>);
-    }
-    let offset = this.props.z * OFFSET;
-    return <div
-      id={ `slice.${this.props.z}` }
-      style={{
-        overflow: "hidden",
-        position: "absolute",
-        top: (256 - this.props.z * OFFSET) + "px",
-        right: offset + "px",
-        width: "1000px",
-        height: "528px",
-        textAlign: "right" }}>
-      { lines }
-      { things }
-    </div>
-  }
-}
-
-class Playfield extends React.Component {
-  submitChat(e) {
-    e.preventDefault();
-    let chat = document.getElementById("cmdline"),
-      inpt = chat.value;
-
-    chat.value = "";
-    agent({msg: inpt, from: window.me});
-  }
-
-  render() {
-    let nodes = [];
-    for (let i in this.props.chat) {
-      let el = this.props.chat[i];
-      nodes.push(<div key={ "chat." + i }>Chat: { el }</div>);
-    }
-    let slices = [];
-    let things = new Array(16);
-    for (let i = 0, l = this.props.grid.things.length; i < l; i++) {
-      let t = this.props.grid.things[i];
-      if (things[t.z] === undefined) {
-        things[t.z] = [];
-      }
-      things[t.z].push(t);
-    }
-    for (let i = 0; i < 16; i++) {
-      slices.push(<GridComponent key={ "slice." + i } grid={ this.props.grid } z={ i } things={ things[i] }/>);
-    }
-    return <div>
-      { slices }
-      { nodes }
-      <div id="chat" style={{
-        fontFamily: "Gill Sans Light, sans-serif",
-        fontSize: "12pt",
-        color: "black",
-        textShadow: "-1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white",
-        paddingTop: "32px",
-        paddingBottom: "2em",
-        position: "relative"}}><span></span></div>
-      <form  style={{
-        boxSizing: "border-box",
-        border: "1px solid #ababab",
-        backgroundColor: "white",
-        padding: "0.25em",
-        position: "fixed",
-        bottom: "0.25em",
-        left: "0.25em",
-        width: "30em"
-        }} onSubmit={ this.submitChat.bind(this) }>
-        <input
-          id="cmdline"
-          type="text"
-          style={{ width: "85%" }} />
-        <button style={{ marginLeft: "0.75em", width: "11%" }}>chat</button>
-      </form>
-    </div>;
-  }
-}
+let scene = new THREE.Scene();
 
 window.oncast = function (thing) {
+  console.log("message", thing);
   if (thing.welcome !== undefined) {
     console.log("grid",
       Object.getOwnPropertyNames(thing.welcome),
       thing.welcome.things);
     grid = new Grid(thing.welcome);
+
+    var camera = new THREE.OrthographicCamera(-14, 13, 13, -14, 1, 1000);
+
+    let player = null;
+
+    var color = -1;
+//    var camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
+    for (let z = 0; z < 16; z++) {
+      color += 1048576;
+      //console.log("color", color.toString(16));
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+//          var geometry = new THREE.TetrahedronGeometry(1);
+          var geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+
+          let voxel = grid.get(x, y, z);
+          var material = COLORS[voxel];
+          var cube = new THREE.Mesh( geometry, material );
+          cube.position.x = x;
+          cube.position.y = z;
+          cube.position.z = y;
+          scene.add( cube );
+          cubes.set(`${x},${y},${z}`, cube);
+          var egh = new THREE.EdgesHelper( cube, 0x000000 );
+          egh.material.linewidth = 2;
+          outlines.set(`${x},${y},${z}`, egh);
+          if (voxel !== 0) {
+            scene.add( egh );
+          }
+        }
+      }
+    }
+
+    for (var thing of grid.things) {
+      var geometry = new THREE.TetrahedronGeometry(0.25);
+      var material = COLORS[thing.color];
+      var tetra = new THREE.Mesh(geometry, material);
+      tetra.position.x = thing.x;
+      tetra.position.y = thing.z - 0.125;
+      tetra.position.z = thing.y;
+      tetras.set(thing.thing, tetra);
+      if (player === null) {
+        player = tetra;
+      }
+      scene.add(tetra);
+      var egh = new THREE.EdgesHelper( tetra, 0x000000 );
+      egh.material.linewidth = 2;
+      scene.add( egh );
+    }
+
+    camera.position.set( -15, 30, 30);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = - Math.PI / 4;
+    camera.rotation.x = Math.atan( - 1 / Math.sqrt( 2 ) );
+
+    var renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize( 1024, 1024 );
+    renderer.setClearColor( 0x000000, 0 );
+    document.body.appendChild( renderer.domElement );
+
+    render = function () {
+    	//requestAnimationFrame( render );
+    	renderer.render( scene, camera );
+      //player.rotation.x += 0.1;
+    }
   } else if (thing.msg !== undefined) {
     chat.push(thing.msg);
     let parent = document.getElementById("chat"),
       node = document.createElement("div");
     node.textContent = `Chat: ${thing.msg}`;
     parent.insertBefore(node, parent.firstChild);
-    return;
   } else if (thing.moved !== undefined) {
     let [x, y, z] = thing.to,
-      node = document.getElementById(`thing.${thing.moved}`),
-      [top, right] = calculateThingTopRight({x: x, y: y, z: z}),
       level_shift = grid.moveto(thing.moved, thing.to);
-
-    node.firstChild.setAttribute(
-      "points", calculatePointsFromHeading(thing.heading));
-
-    function transitionListener(cb) {
-      function listener() {
-        if (cb !== undefined) {
-          cb();
-        }
-        node.removeEventListener('transitionend', listener, false);
-        ignoreKeys = false;
-      }
-      node.addEventListener('transitionend', listener, false);
-      ignoreKeys = true;
-    }
-
-    if (level_shift < 0) {
-      transitionListener(function () {
-        let slice = document.getElementById(`slice.${z}`);
-        node.parentNode.removeChild(node);
-        slice.insertBefore(node, slice.firstChild);
-      });
-
-    } else if (level_shift > 0) {
-      let slice = document.getElementById(`slice.${z}`);
-      node.parentNode.removeChild(node);
-      slice.insertBefore(node, slice.firstChild);
-      transitionListener();
-    } else {
-      if (parseInt(node.style.top) !== top || parseInt(node.style.right) !== right){
-        transitionListener();
-      }
-    }
-
-
-    setTimeout(function() {
-      node.style.top = `${top}px`;
-      node.style.right = `${right}px`;
-    }, 1);
-
-    return;
+    let it = tetras.get(thing.moved);
+    it.position.x = x;
+    it.position.y = z - 0.125;
+    it.position.z = y;
   } else if (thing.dig !== undefined) {
-    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`),
-      fill = tile.firstChild.getAttribute("fill");
-
-    for (let i = 0; i < tile.childNodes.length; i++) {
-      tile.childNodes[i].style.fill = "transparent";
-      tile.childNodes[i].style.stroke = "transparent";
-    }
-    let el = document.createElement("div");
-    el.style.display = "inline-block";
-    el.style.backgroundColor = fill;
-    el.style.height = "32px";
-    el.style.width = "32px";
-    document.getElementById("inventory").appendChild(el);
-    console.log("dig", thing, fill);
-    return;
+    grid.set(thing.x, thing.y, thing.z, 0);
+    let tag = `${thing.x},${thing.y},${thing.z}`;
+    let cube = cubes.get(tag);
+    cube.material = COLORS[0];
+    let edge = outlines.get(tag);
+    scene.remove(edge);
   } else if (thing.place !== undefined) {
-    let tile = document.getElementById(`tile.${thing.x},${thing.y},${thing.z}`),
-      color = COLORS[thing.block];
-
-    for (let i = 0; i < tile.childNodes.length; i++) {
-      tile.childNodes[i].style.fill = color;
-      tile.childNodes[i].style.stroke = "black";
-    }
-    console.log("place", thing, color);
-    return;
+    grid.set(thing.x, thing.y, thing.z, thing.block);
+    let tag = `${thing.x},${thing.y},${thing.z}`;
+    let cube = cubes.get(tag);
+    cube.material = COLORS[thing.block];
+    let edge = outlines.get(tag);
+    scene.add(edge);
   } else if (thing.placed !== undefined) {
-    let inv = document.getElementById("inventory"),
-      color = inv.firstChild.style.backgroundColor;
-
-    inv.removeChild(inv.firstChild);
-    return;
+    //grid.set(thing.x, thing.y, thing.z, thing.block);
   } else if (thing.get !== undefined) {
     let el = document.createElement("div");
     el.textContent = thing.get + " get!";
     document.getElementById("chat").appendChild(el);
-    let player = grid.addInventory(window.me, thing.get);
-    return;
+    let pl = grid.addInventory(window.me, thing.get);
+    let node = document.createElement("span");
+    node.textContent = thing.get;
+    document.getElementById("inventory").appendChild(node);
   } else {
     console.log("client got message", thing);
   }
-  if (grid !== null) {
-    React.render(<Playfield chat={ chat } grid={ grid } />, document.getElementById("content"));
+  if (render !== null) {
+    render();
   }
 }
 
@@ -379,13 +255,10 @@ async function main() {
       let placeIndex = pressed.indexOf("place");
       if (placeIndex !== -1) {
         pressed.splice(placeIndex, 1);
-        let inv = document.getElementById("inventory"),
-          color = inv.firstChild.style.backgroundColor;
-        for (let i = 0, l = COLORS.length; i < l; i++) {
-          if (COLORS[i] === color) {
-            agent({place: window.me, block: i});
-            break;
-          }
+        let inv = document.getElementById("inventory");
+        if (inv.firstChild) {
+          agent({place: window.me, block: parseInt(inv.firstChild.textContent)});
+          inv.removeChild(inv.firstChild);
         }
       }
       if (pressed.length) {

@@ -19,6 +19,7 @@
     "node-static": "0.7.6",
     "query-string": "2.1.0",
     "random-word": "1.0.1",
-    "react": "0.13.3"
+    "react": "0.13.3",
+    "three": "0.71.0"
   }
 }

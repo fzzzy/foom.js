@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Actor</title>
+    <script src="../shared/three.js"></script>
     <script src="../shared/es6-module-loader.js"></script>
     <script src="../shared/browser-polyfill.js"></script>
     <style type="text/css">
@@ -14,11 +15,31 @@
   border-bottom: 1px solid black;
   background-color: white;
 }
+
+#inventory span {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+#content {
+  padding-top: 32px;
+}
+
+canvas {
+  position: absolute;
+  top: 34px;
+  right: 0px;
+  height: 1024px;
+  width: 1024px;
+}
     </style>
   </head>
   <body>
-    <script src="actor-boot-bundle.js"></script>
-    <div id="content"></div>
+    <div id="content">
+      <div id="chat">
+      </div>
+    </div>
     <div id="inventory"></div>
+    <script src="actor-boot-bundle.js"></script>
   </body>
 </html>

@@ -13,6 +13,7 @@ gulp.task("clean", function () {
 gulp.task("shared", function () {
   return gulp.src(
     ["shared/browser-polyfill.js",
+    "shared/three.js",
     "shared/engine.io.js",
     "shared/es6-module-loader.js",
     "shared/es6-module-loader.js.map"]
@@ -29,7 +30,8 @@ gulp.task("transform", ["resources", "shared"], function () {
   return gulp.src(["**/*.js",
     "!dist/**/*", "!node_modules/**/*",
     "!**/shared/browser-polyfill.js", "!**/shared/engine.io.js",
-    "!**/shared/es6-module-loader.js", "!gulpfile.js"])
+    "!**/shared/es6-module-loader.js",
+    "!**/shared/three.js", "!gulpfile.js"])
     .pipe(babel({ stage: 1 }))
     .pipe(gulp.dest("dist"));
 });
