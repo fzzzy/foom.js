@@ -86,7 +86,7 @@ window.oncast = function (thing) {
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
 //          var geometry = new THREE.TetrahedronGeometry(1);
-          var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+          var geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
 
           let voxel = grid.get(x, y, z);
           var material = COLORS[voxel];
