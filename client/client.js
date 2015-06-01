@@ -67,7 +67,7 @@ let cubes = new Map(),
 let scene = new THREE.Scene();
 
 window.oncast = function (thing) {
-  console.log("message", thing);
+  //console.log("message", thing);
   if (thing.welcome !== undefined) {
     console.log("grid",
       Object.getOwnPropertyNames(thing.welcome),
@@ -131,7 +131,7 @@ window.oncast = function (thing) {
     var renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize( 1024, 1024 );
     renderer.setClearColor( 0x000000, 0 );
-    document.body.appendChild( renderer.domElement );
+    document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
     render = function () {
     	//requestAnimationFrame( render );
@@ -174,7 +174,8 @@ window.oncast = function (thing) {
     let pl = grid.addInventory(window.me, thing.get);
     let node = document.createElement("span");
     node.textContent = thing.get;
-    document.getElementById("inventory").appendChild(node);
+    let inv = document.getElementById("inventory");
+    inv.insertBefore(node, inv.firstChild);
   } else {
     console.log("client got message", thing);
   }
@@ -196,6 +197,8 @@ function findKey(e) {
     return "dig";
   } else if (e.keyCode === 13) {
     return "place";
+  } else if (e.keyCode === 191) {
+    return "rotate";
   } else {
     console.log("unknown key", e.keyCode);
   }
@@ -259,6 +262,17 @@ async function main() {
         if (inv.firstChild) {
           agent({place: window.me, block: parseInt(inv.firstChild.textContent)});
           inv.removeChild(inv.firstChild);
+        }
+      }
+      let rotateIndex = pressed.indexOf("rotate");
+      if (rotateIndex !== -1) {
+        pressed.splice(rotateIndex, 1);
+        let inv = document.getElementById("inventory");
+        if (inv.firstChild) {
+          console.log("rotating");
+          let node = inv.firstChild;
+          inv.removeChild(inv.firstChild);
+          inv.appendChild(node);
         }
       }
       if (pressed.length) {
