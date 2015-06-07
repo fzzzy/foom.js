@@ -7,14 +7,12 @@
       throw new Error("Argument to address must be string, not", typeof to, JSON.stringify(to));
     }
     function cast(msg) {
-      console.log("cast()", to, JSON.stringify(msg));
       for (let key in msg) {
         if (msg[key].__address !== undefined) {
           msg[key] = {__address: msg[key].__address};
         }
       }
       let m = {to: {__address: to}, cast: msg};
-      console.log("postMessage", JSON.stringify(m));
       window.parent.postMessage(m, location.origin);
     }
     cast.__address = to;
@@ -38,7 +36,6 @@
         cb.reject(m.data);
       } else {
         let addr = address(m.data.value.__address);
-        console.log("resolve", m.data);
         cb.resolve(addr);
       }
     } else {
@@ -48,7 +45,6 @@
             m.data[key] = address(m.data[key].__address);
           }
         }
-        console.log("actor boot window.oncast", JSON.stringify(m.data));
         window.oncast(m.data);
       }
     }
@@ -59,7 +55,6 @@
       callbacks.set("query." + name, {resolve: resolve, reject: reject});
     });
     let msg = {query: name, from: {__address: window.address.__address}};
-    console.log("postMessage", msg);
     window.parent.postMessage(
       msg,
       location.origin);

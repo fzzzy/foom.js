@@ -67,11 +67,7 @@ let cubes = new Map(),
 let scene = new THREE.Scene();
 
 window.oncast = function (thing) {
-  console.log("message", thing);
   if (thing.welcome !== undefined) {
-    console.log("grid",
-      Object.getOwnPropertyNames(thing.welcome),
-      thing.welcome.things);
     grid = new Grid(thing.welcome);
 
     var camera = new THREE.OrthographicCamera(-14, 13, 13, -14, 1, 1000);
@@ -147,7 +143,7 @@ window.oncast = function (thing) {
   } else if (thing.moved !== undefined) {
     let [x, y, z] = thing.to,
       level_shift = grid.moveto(thing.moved, thing.to);
-    let it = tetras.get(thing.moved);
+    let it = tetras.get(thing.moved.__address);
     it.position.x = x;
     it.position.y = z - 0.125;
     it.position.z = y;
@@ -201,7 +197,7 @@ function findKey(e) {
   } else if (e.keyCode === 191) {
     return "rotate";
   } else {
-    console.log("unknown key", e.keyCode);
+    console.warn("unknown key", e.keyCode);
   }
 }
 
@@ -240,7 +236,6 @@ window.addEventListener("keyup", function (e) {
 
 async function main() {
   let agent = await query("agent");
-  console.log("agent", agent, window.address);
   agent({join: window.address});
   agent({msg: "Hello, World", from: window.address});
   setTimeout(function () {
@@ -270,7 +265,7 @@ async function main() {
         pressed.splice(rotateIndex, 1);
         let inv = document.getElementById("inventory");
         if (inv.firstChild) {
-          console.log("rotating");
+          //console.log("rotating");
           let node = inv.firstChild;
           inv.removeChild(inv.firstChild);
           inv.appendChild(node);

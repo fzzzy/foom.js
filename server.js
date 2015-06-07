@@ -60,7 +60,6 @@ exports.serve = (port) => {
             resp = {response: "query." + msg.query,
               from: msg.from,
               value: it};
-          console.log("server side query response", resp);
           socket.send(JSON.stringify(resp));
         } else {
           console.error(
@@ -68,7 +67,6 @@ exports.serve = (port) => {
           socket.send(JSON.stringify({query: msg.query, error: "NotRegisteredError"}));
         }
       } else if (msg.cast !== undefined) {
-        console.log("vats", data);
         let to = msg.to,
           vat = to.__address.split("/")[0];
         vats.get(vat).send(data);

@@ -35,7 +35,6 @@ class Actor {
   }
 
   cast(msg) {
-    console.log("actor cast msg", JSON.stringify(msg));
     if (this.messageQueue !== null) {
       this.messageQueue.push(msg);
     } else {
@@ -58,14 +57,12 @@ export class Vat {
           vat: vat_id}));
 
       socket.on('message', (msg) => {
-        console.log("actors socket on message", msg);
         msg = JSON.parse(msg);
         if (msg.cast !== undefined) {
           let [vat, id] = msg.to.__address.split("/");
           let act = this.actors.get(id);
           act.cast(msg.cast);
         } else if (msg.response !== undefined) {
-          console.log("from", msg)
           let [vat, id] = msg.from.__address.split("/");
           if (vat === vat_id) {
             let act = this.actors.get(id);
@@ -73,14 +70,13 @@ export class Vat {
           }
         } else {
           if (window.oncast !== undefined) {
-            console.log("actors window.oncast", msg);
             window.oncast(msg);
           }
         }
       });
 
       socket.on("close", function (msg) {
-        console.log("The socket was closed.");
+        console.warn("The socket was closed.");
         if (DEBUG === true) {
           window.location = window.location;
         }
