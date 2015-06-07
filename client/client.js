@@ -67,11 +67,7 @@ let cubes = new Map(),
 let scene = new THREE.Scene();
 
 window.oncast = function (thing) {
-  console.log("message", thing);
   if (thing.welcome !== undefined) {
-    console.log("grid",
-      Object.getOwnPropertyNames(thing.welcome),
-      thing.welcome.things);
     grid = new Grid(thing.welcome);
 
     var camera = new THREE.OrthographicCamera(-14, 13, 13, -14, 1, 1000);
@@ -131,7 +127,7 @@ window.oncast = function (thing) {
     var renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize( 1024, 1024 );
     renderer.setClearColor( 0x000000, 0 );
-    document.body.appendChild( renderer.domElement );
+    document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
     render = function () {
     	//requestAnimationFrame( render );
@@ -147,7 +143,7 @@ window.oncast = function (thing) {
   } else if (thing.moved !== undefined) {
     let [x, y, z] = thing.to,
       level_shift = grid.moveto(thing.moved, thing.to);
-    let it = tetras.get(thing.moved);
+    let it = tetras.get(thing.moved.__address);
     it.position.x = x;
     it.position.y = z - 0.125;
     it.position.z = y;
@@ -171,12 +167,14 @@ window.oncast = function (thing) {
     let el = document.createElement("div");
     el.textContent = thing.get + " get!";
     document.getElementById("chat").appendChild(el);
-    let pl = grid.addInventory(window.me, thing.get);
+    let pl = grid.addInventory(window.address, thing.get);
     let node = document.createElement("span");
     node.textContent = thing.get;
-    document.getElementById("inventory").appendChild(node);
+    let inv = document.getElementById("inventory");
+    inv.insertBefore(node, inv.firstChild);
   } else {
-    console.log("client got message", thing);
+    console.warn("client got unknown message", thing);
+    return;
   }
   if (render !== null) {
     render();
@@ -196,8 +194,10 @@ function findKey(e) {
     return "dig";
   } else if (e.keyCode === 13) {
     return "place";
+  } else if (e.keyCode === 191) {
+    return "rotate";
   } else {
-    console.log("unknown key", e.keyCode);
+    console.warn("unknown key", e.keyCode);
   }
 }
 
@@ -235,13 +235,12 @@ window.addEventListener("keyup", function (e) {
 });
 
 async function main() {
-  let agent_addr = await query("agent");
-  agent = address(agent_addr.value);
-  agent({join: window.me});
-  agent({msg: "Hello, World", from: window.me});
+  let agent = await query("agent");
+  agent({join: window.address});
+  agent({msg: "Hello, World", from: window.address});
   setTimeout(function () {
     for (let i = 0; i < 6; i++) {
-      agent({msg: "another message " + i, from: window.me});
+      agent({msg: "another message " + i, from: window.address});
     }
   }, 1000);
   keypress = function keypress() {
@@ -250,20 +249,31 @@ async function main() {
       let digIndex = pressed.indexOf("dig");
       if (digIndex !== -1) {
         pressed.splice(digIndex, 1);
-        agent({dig: window.me});
+        agent({dig: window.address});
       }
       let placeIndex = pressed.indexOf("place");
       if (placeIndex !== -1) {
         pressed.splice(placeIndex, 1);
         let inv = document.getElementById("inventory");
         if (inv.firstChild) {
-          agent({place: window.me, block: parseInt(inv.firstChild.textContent)});
+          agent({place: window.address, block: parseInt(inv.firstChild.textContent)});
           inv.removeChild(inv.firstChild);
+        }
+      }
+      let rotateIndex = pressed.indexOf("rotate");
+      if (rotateIndex !== -1) {
+        pressed.splice(rotateIndex, 1);
+        let inv = document.getElementById("inventory");
+        if (inv.firstChild) {
+          //console.log("rotating");
+          let node = inv.firstChild;
+          inv.removeChild(inv.firstChild);
+          inv.appendChild(node);
         }
       }
       if (pressed.length) {
         //console.log("pressed", pressed);
-        agent({move: pressed, from: window.me});
+        agent({move: pressed, from: window.address});
       }
     }
   }

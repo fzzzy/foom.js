@@ -27,13 +27,11 @@ for (let y = 0; y < 16; y++) {
 
 window.oncast = function (thing) {
   if (thing.join !== undefined) {
-    console.log("joined", thing.join);
-    let a = address(thing.join);
+    let a = thing.join;
     joined.push(a);
     grid.add(thing.join, 3, 3);
     a({welcome: grid.asJSON()});
   } else if (thing.msg !== undefined) {
-    console.log("msg", thing.from, thing.msg);
     for (let a of joined) {
       a(thing);
     }
@@ -48,17 +46,16 @@ window.oncast = function (thing) {
   } else if (thing.dig !== undefined) {
     let [x, y, z, oldval] = grid.dig(thing.dig);
     if (x !== -1 && y !== -1 && z !== -1) {
-      let digger = address(thing.dig);
+      let digger = thing.dig;
       digger({get: oldval});
       for (let a of joined) {
         a({dig: thing.dig, x: x, y: y, z: z});
       }
     }
   } else if (thing.place !== undefined) {
-    console.log("place", JSON.stringify(thing));
     let [x, y, z, color] = grid.place(thing.place, thing.block);
     if (x !== -1 && y !== -1 && z !== -1) {
-      let placer = address(thing.place);
+      let placer = thing.place;
       placer({placed: color});
       console.log("place", x, y, z, color);
       for (let a of joined) {
@@ -66,6 +63,6 @@ window.oncast = function (thing) {
       }
     }
   } else {
-    console.log("agent.js oncast", JSON.stringify(thing));
+    console.warn("unknown agent message", JSON.stringify(thing));
   }
 }

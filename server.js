@@ -56,10 +56,11 @@ exports.serve = (port) => {
         }
       } else if (msg.query !== undefined) {
         if (named.has(msg.query)) {
-          let it = named.get(msg.query);
-          socket.send(JSON.stringify({response: "query." + msg.query,
-            from: msg.from,
-            value: it}));
+          let it = named.get(msg.query),
+            resp = {response: "query." + msg.query,
+              from: msg.from,
+              value: it};
+          socket.send(JSON.stringify(resp));
         } else {
           console.error(
             msg.from, "NotRegisteredError:", msg.query);
@@ -67,7 +68,7 @@ exports.serve = (port) => {
         }
       } else if (msg.cast !== undefined) {
         let to = msg.to,
-          vat = to.split("/")[0];
+          vat = to.__address.split("/")[0];
         vats.get(vat).send(data);
       }
     });

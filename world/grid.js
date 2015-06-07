@@ -36,7 +36,8 @@ export class Grid {
     this.bytes[Math.floor(index)] = byte;
   }
 
-  add(thing, x, y) {
+  add(addr, x, y) {
+    let thing = addr.__address;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
         throw new Error("Added thing that is already on the grid: " + thing);
@@ -55,7 +56,8 @@ export class Grid {
       inventory: []});
   }
 
-  find(thing) {
+  find(addr) {
+    let thing = addr.__address;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
         return [this.things[i].x, this.things[i].y, this.things[i].z, this.things[i].heading];
@@ -63,7 +65,8 @@ export class Grid {
     }
   }
 
-  remove(thing) {
+  remove(addr) {
+    let thing = addr.__address;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
         this.things.splice(i, 1);
@@ -71,7 +74,8 @@ export class Grid {
     }
   }
 
-  move(thing, directions) {
+  move(addr, directions) {
+    let thing = addr.__address;
     let t = {},
       original = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
@@ -139,7 +143,8 @@ export class Grid {
     return true;
   }
 
-  moveto(thing, loc) {
+  moveto(addr, loc) {
+    let thing = addr.__address;
     let t = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
@@ -155,7 +160,8 @@ export class Grid {
     return changed_z;
   }
 
-  digOrPlace(thing, cb) {
+  digOrPlace(addr, cb) {
+    let thing = addr.__address;
     let t = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
@@ -220,21 +226,24 @@ export class Grid {
     });
   }
 
-  addInventory(player, item) {
-    let t = null;
+  addInventory(addr, item) {
+    let player = addr.__address,
+      t = null;
+
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === player) {
         t = this.things[i];
       }
     }
     if (t === null) {
-      console.error("player not found", this.things, thing);
+      console.error("player not found", this.things, player);
       return;
     }
     t.inventory.push(item);
   }
 
-  removeInventory(player, item) {
+  removeInventory(addr, item) {
+    let player = addr.__address;
     let t = null;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === player) {

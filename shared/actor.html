@@ -21,10 +21,6 @@
   margin-right: 0.5em;
 }
 
-#content {
-  padding-top: 32px;
-}
-
 canvas {
   position: absolute;
   top: 34px;
@@ -32,12 +28,19 @@ canvas {
   height: 1024px;
   width: 1024px;
 }
+
+#chat {
+  position: absolute;
+  padding: 0.5em;
+  top: 32px;
+  left: 0px;
+  width: 100%;
+  text-shadow: 1px 1px 2px white;
+}
     </style>
   </head>
   <body>
-    <div id="content">
-      <div id="chat">
-      </div>
+    <div id="chat">
     </div>
     <div id="inventory"></div>
     <script src="actor-boot-bundle.js"></script>

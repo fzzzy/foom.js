@@ -59,11 +59,11 @@ export class Vat {
       socket.on('message', (msg) => {
         msg = JSON.parse(msg);
         if (msg.cast !== undefined) {
-          let [vat, id] = msg.to.split("/");
+          let [vat, id] = msg.to.__address.split("/");
           let act = this.actors.get(id);
           act.cast(msg.cast);
         } else if (msg.response !== undefined) {
-          let [vat, id] = msg.from.split("/");
+          let [vat, id] = msg.from.__address.split("/");
           if (vat === vat_id) {
             let act = this.actors.get(id);
             act.cast(msg);
@@ -76,7 +76,7 @@ export class Vat {
       });
 
       socket.on("close", function (msg) {
-        console.log("The socket was closed.");
+        console.warn("The socket was closed.");
         if (DEBUG === true) {
           window.location = window.location;
         }
@@ -84,6 +84,10 @@ export class Vat {
     });
 
     window.onmessage = (m) => {
+      if (m.data === undefined) {
+        console.error("onmessage with undefined data");
+        return;
+      }
       if (m.data.query !== undefined) {
         socket.send(JSON.stringify(m.data));
       } else if (m.data.cast !== undefined) {
@@ -101,7 +105,7 @@ export class Vat {
     if (actor_name) {
       this.socket.send(JSON.stringify({
         register: actor_name,
-        from: this.id + "/" + actor.id}));
+        from: {__address: this.id + "/" + actor.id}}));
     }
     return actor;
   }
