@@ -35,6 +35,7 @@ class Actor {
   }
 
   cast(msg) {
+    console.log("actor cast msg", JSON.stringify(msg));
     if (this.messageQueue !== null) {
       this.messageQueue.push(msg);
     } else {
@@ -57,19 +58,22 @@ export class Vat {
           vat: vat_id}));
 
       socket.on('message', (msg) => {
+        console.log("actors socket on message", msg);
         msg = JSON.parse(msg);
         if (msg.cast !== undefined) {
-          let [vat, id] = msg.to.split("/");
+          let [vat, id] = msg.to.__address.split("/");
           let act = this.actors.get(id);
           act.cast(msg.cast);
         } else if (msg.response !== undefined) {
-          let [vat, id] = msg.from.split("/");
+          console.log("from", msg)
+          let [vat, id] = msg.from.__address.split("/");
           if (vat === vat_id) {
             let act = this.actors.get(id);
             act.cast(msg);
           }
         } else {
           if (window.oncast !== undefined) {
+            console.log("actors window.oncast", msg);
             window.oncast(msg);
           }
         }
@@ -84,6 +88,10 @@ export class Vat {
     });
 
     window.onmessage = (m) => {
+      if (m.data === undefined) {
+        console.error("onmessage with undefined data");
+        return;
+      }
       if (m.data.query !== undefined) {
         socket.send(JSON.stringify(m.data));
       } else if (m.data.cast !== undefined) {
@@ -101,7 +109,7 @@ export class Vat {
     if (actor_name) {
       this.socket.send(JSON.stringify({
         register: actor_name,
-        from: this.id + "/" + actor.id}));
+        from: {__address: this.id + "/" + actor.id}}));
     }
     return actor;
   }

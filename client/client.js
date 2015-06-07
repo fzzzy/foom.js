@@ -67,7 +67,7 @@ let cubes = new Map(),
 let scene = new THREE.Scene();
 
 window.oncast = function (thing) {
-  //console.log("message", thing);
+  console.log("message", thing);
   if (thing.welcome !== undefined) {
     console.log("grid",
       Object.getOwnPropertyNames(thing.welcome),
@@ -171,13 +171,14 @@ window.oncast = function (thing) {
     let el = document.createElement("div");
     el.textContent = thing.get + " get!";
     document.getElementById("chat").appendChild(el);
-    let pl = grid.addInventory(window.me, thing.get);
+    let pl = grid.addInventory(window.address, thing.get);
     let node = document.createElement("span");
     node.textContent = thing.get;
     let inv = document.getElementById("inventory");
     inv.insertBefore(node, inv.firstChild);
   } else {
-    console.log("client got message", thing);
+    console.warn("client got unknown message", thing);
+    return;
   }
   if (render !== null) {
     render();
@@ -238,13 +239,13 @@ window.addEventListener("keyup", function (e) {
 });
 
 async function main() {
-  let agent_addr = await query("agent");
-  agent = address(agent_addr.value);
-  agent({join: window.me});
-  agent({msg: "Hello, World", from: window.me});
+  let agent = await query("agent");
+  console.log("agent", agent, window.address);
+  agent({join: window.address});
+  agent({msg: "Hello, World", from: window.address});
   setTimeout(function () {
     for (let i = 0; i < 6; i++) {
-      agent({msg: "another message " + i, from: window.me});
+      agent({msg: "another message " + i, from: window.address});
     }
   }, 1000);
   keypress = function keypress() {
@@ -253,14 +254,14 @@ async function main() {
       let digIndex = pressed.indexOf("dig");
       if (digIndex !== -1) {
         pressed.splice(digIndex, 1);
-        agent({dig: window.me});
+        agent({dig: window.address});
       }
       let placeIndex = pressed.indexOf("place");
       if (placeIndex !== -1) {
         pressed.splice(placeIndex, 1);
         let inv = document.getElementById("inventory");
         if (inv.firstChild) {
-          agent({place: window.me, block: parseInt(inv.firstChild.textContent)});
+          agent({place: window.address, block: parseInt(inv.firstChild.textContent)});
           inv.removeChild(inv.firstChild);
         }
       }
@@ -277,7 +278,7 @@ async function main() {
       }
       if (pressed.length) {
         //console.log("pressed", pressed);
-        agent({move: pressed, from: window.me});
+        agent({move: pressed, from: window.address});
       }
     }
   }

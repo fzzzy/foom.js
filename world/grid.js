@@ -220,15 +220,17 @@ export class Grid {
     });
   }
 
-  addInventory(player, item) {
-    let t = null;
+  addInventory(addr, item) {
+    let player = addr.__address,
+      t = null;
+
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === player) {
         t = this.things[i];
       }
     }
     if (t === null) {
-      console.error("player not found", this.things, thing);
+      console.error("player not found", this.things, player);
       return;
     }
     t.inventory.push(item);
