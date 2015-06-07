@@ -37,8 +37,6 @@ exports.serve = (port) => {
     named = new Map();
 
   engine.attach(http).on('connection', function (socket) {
-    let words = [random(), random(), random(), random()];
-    socket.send(JSON.stringify({name: words.join(" ")}));
 
     socket.on('message', function (data) {
       var msg = JSON.parse(data);

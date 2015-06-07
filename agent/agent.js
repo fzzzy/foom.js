@@ -27,10 +27,13 @@ for (let y = 0; y < 16; y++) {
 
 window.oncast = function (thing) {
   if (thing.join !== undefined) {
-    let a = thing.join;
-    joined.push(a);
     grid.add(thing.join, 3, 3);
-    a({welcome: grid.asJSON()});
+    let who = grid.info(thing.join);
+    for (let other of joined) {
+      other({joined: who, id: thing.join});
+    }
+    joined.push(thing.join);
+    thing.join({welcome: grid.asJSON()});
   } else if (thing.msg !== undefined) {
     for (let a of joined) {
       a(thing);

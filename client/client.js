@@ -26,7 +26,7 @@ const COLORS = [
   rgb(68, 34, 153),
 ];
 
-console.log("COLORS", COLORS);
+//console.log("COLORS", COLORS);
 
 let agent = null,
   grid = null,
@@ -64,59 +64,62 @@ let cubes = new Map(),
   outlines = new Map(),
   tetras = new Map();
 
-let scene = new THREE.Scene();
+let scene = new THREE.Scene(),
+  camera = new THREE.OrthographicCamera(-14, 13, 13, -14, 1, 1000),
+  player = null;
+
+function addVoxel(x, y, z) {
+  var geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
+
+  let voxel = grid.get(x, y, z);
+  var material = COLORS[voxel];
+  var cube = new THREE.Mesh( geometry, material );
+  cube.position.x = x;
+  cube.position.y = z;
+  cube.position.z = y;
+  scene.add( cube );
+  cubes.set(`${x},${y},${z}`, cube);
+  var egh = new THREE.EdgesHelper( cube, 0x000000 );
+  egh.material.linewidth = 2;
+  outlines.set(`${x},${y},${z}`, egh);
+  if (voxel !== 0) {
+    scene.add( egh );
+  }
+}
+
+function addTetra(thing) {
+  var geometry = new THREE.TetrahedronGeometry(0.25);
+  var material = COLORS[thing.color];
+  var tetra = new THREE.Mesh(geometry, material);
+  tetra.position.x = thing.x;
+  tetra.position.y = thing.z - 0.125;
+  tetra.position.z = thing.y;
+  tetras.set(thing.thing, tetra);
+  if (player === null) {
+    player = tetra;
+  }
+  scene.add(tetra);
+  var egh = new THREE.EdgesHelper( tetra, 0x000000 );
+  egh.material.linewidth = 2;
+  scene.add( egh );
+}
 
 window.oncast = function (thing) {
   if (thing.welcome !== undefined) {
     grid = new Grid(thing.welcome);
 
-    var camera = new THREE.OrthographicCamera(-14, 13, 13, -14, 1, 1000);
 
-    let player = null;
 
-    var color = -1;
-//    var camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
     for (let z = 0; z < 16; z++) {
-      color += 1048576;
-      //console.log("color", color.toString(16));
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
-//          var geometry = new THREE.TetrahedronGeometry(1);
-          var geometry = new THREE.BoxGeometry(0.98, 0.98, 0.98);
-
-          let voxel = grid.get(x, y, z);
-          var material = COLORS[voxel];
-          var cube = new THREE.Mesh( geometry, material );
-          cube.position.x = x;
-          cube.position.y = z;
-          cube.position.z = y;
-          scene.add( cube );
-          cubes.set(`${x},${y},${z}`, cube);
-          var egh = new THREE.EdgesHelper( cube, 0x000000 );
-          egh.material.linewidth = 2;
-          outlines.set(`${x},${y},${z}`, egh);
-          if (voxel !== 0) {
-            scene.add( egh );
-          }
+          addVoxel(x, y, z);
         }
       }
     }
 
     for (var thing of grid.things) {
-      var geometry = new THREE.TetrahedronGeometry(0.25);
-      var material = COLORS[thing.color];
-      var tetra = new THREE.Mesh(geometry, material);
-      tetra.position.x = thing.x;
-      tetra.position.y = thing.z - 0.125;
-      tetra.position.z = thing.y;
-      tetras.set(thing.thing, tetra);
-      if (player === null) {
-        player = tetra;
-      }
-      scene.add(tetra);
-      var egh = new THREE.EdgesHelper( tetra, 0x000000 );
-      egh.material.linewidth = 2;
-      scene.add( egh );
+      addTetra(thing);
     }
 
     camera.position.set( -15, 30, 30);
@@ -172,6 +175,11 @@ window.oncast = function (thing) {
     node.textContent = thing.get;
     let inv = document.getElementById("inventory");
     inv.insertBefore(node, inv.firstChild);
+  } else if (thing.joined !== undefined) {
+    let newthing = grid.add(
+      thing.id, thing.joined.x, thing.joined.y,
+      thing.joined.color, thing.joined.heading);
+    addTetra(newthing);
   } else {
     console.warn("client got unknown message", thing);
     return;

@@ -36,7 +36,7 @@ export class Grid {
     this.bytes[Math.floor(index)] = byte;
   }
 
-  add(addr, x, y) {
+  add(addr, x, y, color, heading) {
     let thing = addr.__address;
     for (var i = 0, l = this.things.length; i < l; i++) {
       if (this.things[i].thing === thing) {
@@ -49,11 +49,28 @@ export class Grid {
         break;
       }
     }
+    if (color === undefined) {
+      color = Math.floor(Math.random() * 15) + 1;
+    }
+    if (heading === undefined) {
+      heading = ["n"];
+    }
     this.things.push({
       thing: thing, x: x, y: y, z: zt + 1,
-      heading: ["n"],
-      color: Math.floor(Math.random() * 15) + 1,
+      heading: heading,
+      color: color,
       inventory: []});
+    return this.things[this.things.length - 1];
+  }
+
+  info(addr) {
+    let thing = addr.__address;
+    for (var i = 0, l = this.things.length; i < l; i++) {
+      if (this.things[i].thing === thing) {
+        let {x, y, z, heading, color} = this.things[i];
+        return {x, y, z, heading, color};
+      }
+    }
   }
 
   find(addr) {
